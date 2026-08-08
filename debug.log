@@ -147,3 +147,5 @@
 [2026-08-08T02:51:30.780Z] Arbeitnow API success: fetched 175 jobs, returned 41.
 [2026-08-08T02:54:31.074Z] getJobs details: what="Full Stack Engineer", API="Arbeitnow"
 [2026-08-08T02:54:31.498Z] Arbeitnow API success: fetched 175 jobs, returned 34.
+[2026-08-08T14:49:42.383Z] getJobs details: what="Full Stack Engineer", API="Arbeitnow"
+[2026-08-08T14:49:43.982Z] Arbeitnow API success: fetched 175 jobs, returned 58.

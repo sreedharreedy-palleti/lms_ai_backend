@@ -288,50 +288,9 @@ ${resumeText}`,
         return res.status(500).json({ success: false, error: 'Failed to evaluate resume for the target role.' });
     }
 };
-
-// Controller: Fetch Sandbox Demo Data
-const getDemoData = (req, res) => {
-    const demoData = {
-        name: "Jane Doe",
-        email: "jane.doe@example.com",
-        phone: "+1-555-019-2834",
-        linkedin: "linkedin.com/in/janedoe",
-        github: "github.com/janedoe",
-        portfolio: "janedoe.dev",
-        skills: {
-            languages: ["JavaScript", "TypeScript", "Python", "SQL"],
-            frameworks: ["React", "Node.js", "Express", "Next.js", "Tailwind CSS"],
-            tools: ["AWS", "Docker", "Git", "GitHub", "PostgreSQL", "MongoDB"],
-            concepts: ["Agile", "REST API", "System Design", "CI/CD"]
-        },
-        sections: {
-            experience: true,
-            education: true,
-            skills: true,
-            projects: true
-        },
-        score: 85,
-        rating: "Good",
-        tips: [
-            { "type": "info", "message": "Add more details to your project section." }
-        ],
-        rawText: "Jane Doe\njane.doe@example.com\n+1-555-019-2834\nlinkedin.com/in/janedoe\ngithub.com/janedoe\n\nSKILLS:\nLanguages: JavaScript, TypeScript, Python, SQL\nFrameworks: React, Node.js, Express, Next.js, Tailwind/CSS\nTools: AWS, Docker, Git, GitHub, PostgreSQL, MongoDB\nConcepts: Agile, REST API, System Design, CI/CD\n\nEXPERIENCE:\nSenior Software Engineer at Tech Corp (2023 - Present)\n- Built scalable React applications and Node.js APIs.",
-        fileName: "demo_resume.pdf",
-        fileSize: "120 KB",
-        pageCount: 1,
-        totalSkillsCount: 19
-    };
-
-    return res.status(200).json({
-        success: true,
-        parsedData: demoData
-    });
-};
-
 module.exports = {
     extractResume,
     getHealth,
     matchJD,
-    matchRole,
-    getDemoData
+    matchRole
 };

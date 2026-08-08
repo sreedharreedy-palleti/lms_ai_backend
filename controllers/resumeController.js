@@ -1,5 +1,5 @@
 const { PDFParse } = require('pdf-parse');
-const { ai, resumeSchema } = require('../config/gemini');
+const { ai, resumeSchema, matchRoleSchema } = require('../config/gemini');
 const Resume = require('../models/Resume');
 const { parseResumeTextHeuristic, calculateHeuristicRoleScore } = require('../services/heuristicService');
 
@@ -259,20 +259,11 @@ Analyze the following candidate's resume text against a target job role: "${role
 Calculate an ATS score (0-100) and rating (Excellent/Good/Fair/Weak) based on how well the candidate's skills and experience match this target role.
 Generate matching skills, missing skills, and actionable recommendations/tips to improve the resume for this specific role.
 
-Return a JSON object matching this exact schema:
-{
-  "score": integer (0 to 100),
-  "rating": string ("Excellent" | "Good" | "Fair" | "Weak"),
-  "matchedSkills": array of strings,
-  "missingSkills": array of strings,
-  "recommendations": string (a paragraph of summary advice),
-  "tips": array of objects: { "type": "danger" | "warning" | "info" | "success", "message": "specific tip text" }
-}
-
 Resume Text:
 ${resumeText}`,
                     config: {
-                        responseMimeType: 'application/json'
+                        responseMimeType: 'application/json',
+                        responseSchema: matchRoleSchema
                     }
                 });
 

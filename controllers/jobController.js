@@ -110,6 +110,73 @@ const matchesQuery = (job, query) => {
     return queryWords.some(word => matchesKeyword(job.title, job.skills, word));
 };
 
+const Resume = require('../models/Resume');
+
+// Helper to generate suggested titles from resume skills (identical to frontend logic)
+const generateSuggestedTitles = (skills) => {
+    if (!skills) return ["Full Stack Engineer", "Frontend Developer", "Backend Engineer", "Software Developer"];
+    
+    const titles = new Set();
+    const allSkills = [
+        ...(skills.languages || []),
+        ...(skills.frameworks || []),
+        ...(skills.tools || []),
+        ...(skills.concepts || [])
+    ].map(s => s.toLowerCase());
+
+    const hasFrontend = allSkills.some(s => ['react', 'vue', 'angular', 'next.js', 'nextjs', 'css', 'tailwind', 'javascript', 'typescript', 'html5', 'html'].includes(s));
+    const hasBackend = allSkills.some(s => ['node.js', 'nodejs', 'express', 'python', 'django', 'flask', 'java', 'postgresql', 'postgres', 'sql', 'mongodb', 'redis', 'go', 'ruby'].includes(s));
+    const hasDevops = allSkills.some(s => ['aws', 'docker', 'kubernetes', 'jenkins', 'ci/cd', 'gcp', 'azure'].includes(s));
+    
+    if (hasFrontend && hasBackend) {
+        titles.add("Full Stack Engineer");
+    }
+    if (hasFrontend) {
+        titles.add("Frontend Developer");
+        titles.add("UI Engineer");
+    }
+    if (hasBackend) {
+        titles.add("Backend Engineer");
+        titles.add("Software Engineer");
+    }
+    if (hasDevops) {
+        titles.add("DevOps Engineer");
+        titles.add("Cloud Architect");
+    }
+    
+    if (titles.size === 0) {
+        titles.add("Software Developer");
+        titles.add("Full Stack Engineer");
+        titles.add("Frontend Developer");
+        titles.add("Backend Engineer");
+    }
+    
+    return Array.from(titles);
+};
+
+const getSkillOverlapCount = (job, resumeSkills) => {
+    let overlapCount = 0;
+    const jobTitleLower = (job.title || '').toLowerCase();
+    const jobDescriptionLower = (job.description || '').toLowerCase();
+    const jobSkills = (job.skills || []).map(s => s.toLowerCase());
+
+    resumeSkills.forEach(skill => {
+        const skillClean = skill.toLowerCase();
+        if (skillClean.length <= 3) {
+            const regex = new RegExp(`\\b${skillClean.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\b`, 'i');
+            if (regex.test(jobTitleLower) || regex.test(jobDescriptionLower) || jobSkills.includes(skillClean)) {
+                overlapCount++;
+            }
+        } else {
+            if (jobTitleLower.includes(skillClean) || jobDescriptionLower.includes(skillClean) || jobSkills.includes(skillClean)) {
+                overlapCount++;
+            }
+        }
+    });
+
+    return overlapCount;
+};
+
 const getJobs = async (req, res) => {
     const fs = require('fs');
     const { what = '', experience = '' } = req.query;
@@ -119,8 +186,22 @@ const getJobs = async (req, res) => {
 
         console.log("getJobs request details (Arbeitnow API):", { what, experience });
 
-        const searchQuery = what || "";
-        const url = `https://www.arbeitnow.com/api/job-board-api?search=${encodeURIComponent(searchQuery)}`;
+        // If the 'what' query parameter is empty, it means the resume has been cleared or not uploaded yet
+        if (!what) {
+            return res.status(200).json({ success: true, source: 'arbeitnow', jobs: [] });
+        }
+
+        // Fetch the latest uploaded resume from database to determine jobs matching resume only
+        const latestResume = await Resume.findOne().sort({ createdAt: -1 });
+        if (!latestResume) {
+            return res.status(200).json({ success: true, source: 'arbeitnow', jobs: [] });
+        }
+
+        // Generate recommended role based on resume skills
+        const titles = generateSuggestedTitles(latestResume.parsedData.skills);
+        const resumeRoleQuery = titles.length > 0 ? titles[0] : "Software Developer";
+
+        const url = `https://www.arbeitnow.com/api/job-board-api?search=${encodeURIComponent(resumeRoleQuery)}`;
         
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 15000);
@@ -162,17 +243,27 @@ const getJobs = async (req, res) => {
                 };
             });
 
-            let finalJobs = [];
-            if (what) {
-                // If query is specified, strictly filter jobs
-                finalJobs = jobs.filter(job => matchesQuery(job, what));
-            } else {
-                // If query is empty, return empty list (no default jobs on load)
-                finalJobs = [];
-            }
+            // Extract candidate resume skills
+            const resumeSkills = [
+                ...(latestResume.parsedData.skills.languages || []),
+                ...(latestResume.parsedData.skills.frameworks || []),
+                ...(latestResume.parsedData.skills.tools || []),
+                ...(latestResume.parsedData.skills.concepts || [])
+            ].map(s => s.toLowerCase());
+
+            // Filter jobs strictly based on resume's recommended title AND require at least 1 overlapping skill
+            const finalJobs = jobs
+                .map(job => {
+                    const overlapCount = getSkillOverlapCount(job, resumeSkills);
+                    return { ...job, overlapCount };
+                })
+                .filter(job => {
+                    return matchesQuery(job, resumeRoleQuery) && job.overlapCount >= 1;
+                })
+                .sort((a, b) => b.overlapCount - a.overlapCount); // Sort by highest matching skills count
 
             fs.appendFileSync('debug.log', `[${new Date().toISOString()}] Arbeitnow API success: fetched ${jobs.length} jobs, returned ${finalJobs.length}.\n`);
-            console.log(`Successfully fetched ${jobs.length} jobs, returned ${finalJobs.length} jobs.`);
+            console.log(`Successfully fetched ${jobs.length} jobs, returned ${finalJobs.length} jobs matching resume role "${resumeRoleQuery}".`);
             return res.status(200).json({ success: true, source: 'arbeitnow', jobs: finalJobs });
         } else {
             const errorText = await response.text().catch(() => '');

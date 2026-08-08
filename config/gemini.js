@@ -51,7 +51,31 @@ const resumeSchema = {
     required: ['name', 'email', 'phone', 'linkedin', 'github', 'portfolio', 'skills', 'sections', 'score', 'rating', 'tips']
 };
 
+const matchRoleSchema = {
+    type: 'OBJECT',
+    properties: {
+        score: { type: 'INTEGER', description: "ATS matching score from 0 to 100" },
+        rating: { type: 'STRING', description: "Match Rating (Excellent, Good, Fair, Weak) based on score" },
+        matchedSkills: { type: 'ARRAY', items: { type: 'STRING' }, description: "Skills present in the resume that match the target role" },
+        missingSkills: { type: 'ARRAY', items: { type: 'STRING' }, description: "Required skills for the target role that are missing from the resume" },
+        recommendations: { type: 'STRING', description: "Actionable summary advice for the candidate to improve their fit for this role" },
+        tips: {
+            type: 'ARRAY',
+            items: {
+                type: 'OBJECT',
+                properties: {
+                    type: { type: 'STRING', description: "The type of tip: danger, warning, info, success" },
+                    message: { type: 'STRING', description: "Specific actionable tip text" }
+                },
+                required: ['type', 'message']
+            }
+        }
+    },
+    required: ['score', 'rating', 'matchedSkills', 'missingSkills', 'recommendations', 'tips']
+};
+
 module.exports = {
     ai,
-    resumeSchema
+    resumeSchema,
+    matchRoleSchema
 };

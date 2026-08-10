@@ -41,8 +41,14 @@ const ResumeSchema = new mongoose.Schema({
         tips: [{
             type: { type: String }, // literal 'type' field using nested mongoose type syntax
             message: { type: String }
-        }]
+        }],
+        summary: { type: String }
     },
+    interviewQuestions: [{
+        question: { type: String },
+        type: { type: String }, // 'type' field
+        expectedAnswer: { type: String }
+    }],
     createdAt: {
         type: Date,
         default: Date.now

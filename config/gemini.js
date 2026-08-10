@@ -74,8 +74,62 @@ const matchRoleSchema = {
     required: ['score', 'rating', 'matchedSkills', 'missingSkills', 'recommendations', 'tips']
 };
 
+const matchJdSchema = {
+    type: 'OBJECT',
+    properties: {
+        matchScore: { type: 'INTEGER', description: "ATS matching score from 0 to 100" },
+        rating: { type: 'STRING', description: "Match Rating (Excellent, Good, Fair, Weak) based on score" },
+        matchedSkills: { type: 'ARRAY', items: { type: 'STRING' }, description: "Skills present in the resume that match the job description" },
+        missingSkills: { type: 'ARRAY', items: { type: 'STRING' }, description: "Skills requested in the job description that are missing from the resume" },
+        recommendations: { type: 'STRING', description: "Actionable summary advice for the candidate to improve their fit for this job description" },
+        tips: {
+            type: 'ARRAY',
+            items: {
+                type: 'OBJECT',
+                properties: {
+                    type: { type: 'STRING', description: "The type of tip: danger, warning, info, success" },
+                    message: { type: 'STRING', description: "Specific actionable tip text" }
+                },
+                required: ['type', 'message']
+            }
+        }
+    },
+    required: ['matchScore', 'rating', 'matchedSkills', 'missingSkills', 'recommendations', 'tips']
+};
+
+const interviewQuestionsSchema = {
+    type: 'OBJECT',
+    properties: {
+        questions: {
+            type: 'ARRAY',
+            items: {
+                type: 'OBJECT',
+                properties: {
+                    question: { type: 'STRING', description: "The interview question text" },
+                    type: { type: 'STRING', description: "Type of question: Technical, Behavioral, Resume-specific" },
+                    expectedAnswer: { type: 'STRING', description: "Guideline of what a good response from the candidate should include" }
+                },
+                required: ['question', 'type', 'expectedAnswer']
+            }
+        }
+    },
+    required: ['questions']
+};
+
+const invitationEmailSchema = {
+    type: 'OBJECT',
+    properties: {
+        subject: { type: 'STRING', description: "Personalized subject line for the email" },
+        body: { type: 'STRING', description: "Personalized email body content including placeholders like [Date], [Time] etc." }
+    },
+    required: ['subject', 'body']
+};
+
 module.exports = {
     ai,
     resumeSchema,
-    matchRoleSchema
+    matchRoleSchema,
+    matchJdSchema,
+    interviewQuestionsSchema,
+    invitationEmailSchema
 };

@@ -69,9 +69,22 @@ const matchRoleSchema = {
                 },
                 required: ['type', 'message']
             }
+        },
+        questions: {
+            type: 'ARRAY',
+            items: {
+                type: 'OBJECT',
+                properties: {
+                    question: { type: 'STRING', description: "The interview question text" },
+                    type: { type: 'STRING', description: "Type of question: Technical, Behavioral, Resume-specific" },
+                    expectedAnswer: { type: 'STRING', description: "Guideline of what a good response from the candidate should include" }
+                },
+                required: ['question', 'type', 'expectedAnswer']
+            },
+            description: "5 targeted interview questions tailored specifically to evaluate the candidate's suitability for this role"
         }
     },
-    required: ['score', 'rating', 'matchedSkills', 'missingSkills', 'recommendations', 'tips']
+    required: ['score', 'rating', 'matchedSkills', 'missingSkills', 'recommendations', 'tips', 'questions']
 };
 
 const matchJdSchema = {
@@ -92,9 +105,22 @@ const matchJdSchema = {
                 },
                 required: ['type', 'message']
             }
+        },
+        questions: {
+            type: 'ARRAY',
+            items: {
+                type: 'OBJECT',
+                properties: {
+                    question: { type: 'STRING', description: "The interview question text" },
+                    type: { type: 'STRING', description: "Type of question: Technical, Behavioral, Resume-specific" },
+                    expectedAnswer: { type: 'STRING', description: "Guideline of what a good response from the candidate should include" }
+                },
+                required: ['question', 'type', 'expectedAnswer']
+            },
+            description: "5 targeted interview questions tailored specifically to evaluate the candidate's suitability for this job"
         }
     },
-    required: ['matchScore', 'rating', 'matchedSkills', 'missingSkills', 'recommendations', 'tips']
+    required: ['matchScore', 'rating', 'matchedSkills', 'missingSkills', 'recommendations', 'tips', 'questions']
 };
 
 const interviewQuestionsSchema = {

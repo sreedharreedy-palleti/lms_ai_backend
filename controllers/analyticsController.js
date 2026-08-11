@@ -29,21 +29,22 @@ const getAnalytics = async (req, res) => {
         };
 
         resumes.forEach(r => {
-            const score = r.parsedData.score || 0;
+            const parsed = r.parsedData || {};
+            const score = parsed.score || 0;
             totalScore += score;
 
-            const rating = r.parsedData.rating || 'Weak';
+            const rating = parsed.rating || 'Weak';
             if (ratingDistribution[rating] !== undefined) {
                 ratingDistribution[rating]++;
             } else {
                 ratingDistribution['Weak']++;
             }
 
-            const s = r.parsedData.skills || {};
+            const s = parsed.skills || {};
             ['languages', 'frameworks', 'tools', 'concepts'].forEach(category => {
                 const list = s[category] || [];
                 list.forEach(skill => {
-                    const normSkill = skill.trim();
+                    const normSkill = skill ? skill.trim() : '';
                     if (normSkill) {
                         skillCounts[category][normSkill] = (skillCounts[category][normSkill] || 0) + 1;
                     }

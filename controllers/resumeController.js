@@ -59,6 +59,7 @@ ${extractedText}`,
         }
 
         let dbSaved = false;
+        let candidateId = null;
         if (extractedText) {
             try {
                 const newResume = new Resume({
@@ -71,6 +72,7 @@ ${extractedText}`,
 
                 await newResume.save();
                 dbSaved = true;
+                candidateId = newResume._id;
                 console.log('Successfully saved parsed resume to MongoDB.');
             } catch (dbError) {
                 console.error('Error saving parsed resume to MongoDB:', dbError);
@@ -79,6 +81,7 @@ ${extractedText}`,
 
         return res.status(200).json({
             success: true,
+            id: candidateId,
             fileName: resumeFile.name,
             fileSize: resumeFile.size,
             pageCount: infoResult.total || 'Unknown',
@@ -114,6 +117,7 @@ const matchJD = async (req, res) => {
 Analyze the candidate's resume text against the provided job description.
 Calculate a match score (0-100) and rating (Excellent/Good/Fair/Weak) based on how well the candidate's skills and experience align with the job description.
 Identify matching skills (which exist in both), missing skills (requested in job description but missing or weak in resume), and actionable recommendations to improve the resume for this specific job description. Also generate formatting or key tips.
+In addition, generate 5 targeted interview questions tailored specifically to evaluate the candidate's suitability for this job. Provide a mix of technical, behavioral, and resume-specific questions. For each question, specify the type and include expected answer guidelines for the recruiter.
 
 Job Description:
 ${jdText}
@@ -272,6 +276,34 @@ ${resumeText}`,
             tips.push({ type: 'success', message: 'Perfect keyword overlap for this role!' });
         }
 
+        const fallbackQuestions = [
+            {
+                question: `Based on your resume, how would you apply your technical skills to succeed in this role?`,
+                type: 'Technical',
+                expectedAnswer: `Should reference candidate's key skills matching the job requirements.`
+            },
+            {
+                question: `In the job description, we emphasize collaboration. Can you share an example from your resume where you worked closely with cross-functional teams?`,
+                type: 'Behavioral',
+                expectedAnswer: 'Should describe team structure, candidate role, and clear collaborative outcomes.'
+            },
+            {
+                question: `What specific experience listed in your resume makes you uniquely qualified for this position?`,
+                type: 'Resume-specific',
+                expectedAnswer: 'Should highlight a key past project or experience closely related to the job description keywords.'
+            },
+            {
+                question: `How do you handle technical challenges or shifting requirements when delivering a project in a fast-paced environment?`,
+                type: 'Behavioral',
+                expectedAnswer: 'Look for adaptability, communication, and systematic problem solving.'
+            },
+            {
+                question: `Are there any specific tools or frameworks mentioned in the job description that you haven't used extensively, and how do you plan to get up to speed?`,
+                type: 'Technical',
+                expectedAnswer: 'Look for resourcefulness, learning enthusiasm, and previous experience learning new skills quickly.'
+            }
+        ];
+
         return res.status(200).json({
             success: true,
             matchResult: {
@@ -280,7 +312,8 @@ ${resumeText}`,
                 matchedSkills,
                 missingSkills,
                 recommendations,
-                tips
+                tips,
+                questions: fallbackQuestions
             }
         });
     } catch (error) {
@@ -317,6 +350,7 @@ const matchRole = async (req, res) => {
 Analyze the following candidate's resume text against a target job role: "${role}" requiring "${experience || 'any'}" years of experience.
 Calculate an ATS score (0-100) and rating (Excellent/Good/Fair/Weak) based on how well the candidate's skills and experience match this target role.
 Generate matching skills, missing skills, and actionable recommendations/tips to improve the resume for this specific role.
+In addition, generate 5 targeted interview questions (a mix of technical, behavioral, and resume-specific questions) to evaluate the candidate's suitability for this target role. For each question, specify the type and include expected answer guidelines for the recruiter.
 
 Resume Text:
 ${resumeText}`,
@@ -409,9 +443,31 @@ const getDemoData = async (req, res) => {
             rawText: "John Doe Senior Software Engineer Email: john.doe@example.com Phone: +1 234 567 8901 Skills: JavaScript, TypeScript, Python, React, Next.js, Node.js, Git, Docker, AWS, REST APIs. Experience: Senior Software Engineer at InnovateTech Solutions (2023-Present), Software Developer at Quantum Code Inc (2021-2023). Education: BS in Computer Science from University of Tech (2017-2021)."
         };
 
+        // Save/find demo candidate in database
+        let demoId = null;
+        try {
+            const existingDemo = await Resume.findOne({ "parsedData.email": demoData.email });
+            if (existingDemo) {
+                demoId = existingDemo._id;
+            } else {
+                const newDemo = new Resume({
+                    fileName: "Demo_Resume.pdf",
+                    fileSize: "91.9 KB",
+                    pageCount: "1",
+                    rawText: demoData.rawText,
+                    parsedData: demoData
+                });
+                await newDemo.save();
+                demoId = newDemo._id;
+            }
+        } catch (dbErr) {
+            console.error("Error saving demo candidate to MongoDB:", dbErr);
+        }
+
         return res.status(200).json({
             success: true,
-            parsedData: demoData,
+            id: demoId,
+            parsedData: { ...demoData, id: demoId },
             fileName: "Demo_Resume.pdf",
             fileSize: 94100,
             pageCount: 1,

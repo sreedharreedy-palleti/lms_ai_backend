@@ -386,16 +386,33 @@ const calculateHeuristicRoleScore = (resumeText, role, experience) => {
         ? `To improve your compatibility for a ${role} role, try to gain experience or list keywords related to: ${missingSkills.join(', ')}. Ensure your profile reflects years of hands-on application of these core structures.`
         : `Your resume is highly optimized for a ${role} position! Keep building hands-on projects and prepare for backend and frontend system design interviews.`;
 
-    const tips = [];
-    if (missingSkills.length > 0) {
-        tips.push({ type: 'warning', message: `Add missing key technologies: ${missingSkills.slice(0, 3).join(', ')}.` });
-    }
-    if (parsedExp > 0 && !textLower.includes('experience')) {
-        tips.push({ type: 'danger', message: `You are applying for a role requiring ${parsedExp} years experience, but no work history section header was found.` });
-    }
-    if (matchedSkills.length > 3) {
-        tips.push({ type: 'success', message: `Strong overlap in core technologies: ${matchedSkills.slice(0, 4).join(', ')}.` });
-    }
+    const fallbackQuestions = [
+        {
+            question: `Can you describe your experience working with ${matchedSkills[0] || 'software development'} and explain a challenging technical problem you solved using it?`,
+            type: 'Technical',
+            expectedAnswer: 'Should mention specific language features, debugging processes, and a clear problem-solving methodology.'
+        },
+        {
+            question: `Can you tell us about a time you had to adapt to a new framework or tool quickly for a project?`,
+            type: 'Behavioral',
+            expectedAnswer: 'Should explain the learning process, resourcefulness, and successfully applying the new tool to deliver results.'
+        },
+        {
+            question: 'Walk us through one of the major projects listed in your resume and discuss your individual contribution.',
+            type: 'Resume-specific',
+            expectedAnswer: 'Candidate should clearly separate their own work from the team, showing ownership and communication.'
+        },
+        {
+            question: `How do you ensure code quality and performance in your software applications, especially when working on ${role}?`,
+            type: 'Technical',
+            expectedAnswer: 'Should mention code reviews, testing frameworks, CI/CD pipelines, and profiling tools.'
+        },
+        {
+            question: 'What is your preferred methodology for working in a team (e.g. Agile/Scrum) and how do you handle team conflicts?',
+            type: 'Behavioral',
+            expectedAnswer: 'Look for collaboration skills, understanding of team ceremonies, and a professional, respectful conflict resolution strategy.'
+        }
+    ];
 
     return {
         score,
@@ -403,7 +420,8 @@ const calculateHeuristicRoleScore = (resumeText, role, experience) => {
         matchedSkills,
         missingSkills,
         recommendations,
-        tips
+        tips,
+        questions: fallbackQuestions
     };
 };
 

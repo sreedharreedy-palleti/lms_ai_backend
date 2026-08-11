@@ -10,7 +10,7 @@ const getCandidateEmail = async (req, res) => {
             return res.status(404).json({ success: false, error: 'Candidate not found.' });
         }
 
-        const candidateName = candidate.parsedData.name || 'Candidate';
+        const candidateName = candidate.parsedData?.name || 'Candidate';
         const role = jobTitle || 'Software Engineer';
         const company = companyName || 'our company';
         const recruiter = recruiterName || 'Recruiting Team';

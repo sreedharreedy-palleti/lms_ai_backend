@@ -9,25 +9,30 @@ const getCandidateSummary = async (req, res) => {
             return res.status(404).json({ success: false, error: 'Candidate not found.' });
         }
 
-        if (candidate.parsedData.summary) {
-            return res.status(200).json({ success: true, summary: candidate.parsedData.summary });
+        const parsed = candidate.parsedData || {};
+        if (parsed.summary) {
+            return res.status(200).json({ success: true, summary: parsed.summary });
         }
 
         let summaryText = '';
         if (ai && candidate.rawText) {
             try {
-                console.log(`Generating AI summary for candidate ${candidate.parsedData.name}...`);
+                console.log(`Generating AI summary for candidate ${parsed.name || 'Candidate'}...`);
                 const response = await ai.models.generateContent({
                     model: 'gemini-2.0-flash',
                     contents: `Write a concise and professional 3-4 sentence executive summary highlighting the candidate's core expertise, experience, strengths, and overall suitability based on the following resume text. Do not use markdown inside the summary text.
                     
-Candidate Resume Text:
-${candidate.rawText}`
+                    Candidate Resume Text:
+                    ${candidate.rawText}`
                 });
 
                 if (response.text) {
                     summaryText = response.text.trim();
+                    if (!candidate.parsedData) {
+                        candidate.parsedData = {};
+                    }
                     candidate.parsedData.summary = summaryText;
+                    candidate.markModified('parsedData');
                     await candidate.save();
                 }
             } catch (err) {
@@ -37,10 +42,10 @@ ${candidate.rawText}`
 
         if (!summaryText) {
             const skills = [
-                ...(candidate.parsedData.skills.languages || []),
-                ...(candidate.parsedData.skills.frameworks || [])
+                ...(parsed.skills?.languages || []),
+                ...(parsed.skills?.frameworks || [])
             ].slice(0, 5).join(', ');
-            summaryText = `${candidate.parsedData.name} is a software professional with expertise in technical skills including ${skills}. The candidate has a complete profile rated as ${candidate.parsedData.rating} with an overall suitability score of ${candidate.parsedData.score}/100.`;
+            summaryText = `${parsed.name || 'Candidate'} is a software professional with expertise in technical skills including ${skills}. The candidate has a complete profile rated as ${parsed.rating || 'Weak'} with an overall suitability score of ${parsed.score || 0}/100.`;
         }
 
         return res.status(200).json({ success: true, summary: summaryText });
